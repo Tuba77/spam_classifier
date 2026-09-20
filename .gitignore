@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+model.pkl
+spam_or_nonspam.csv
+venv/
+.ipynb_checkpoints/
+README.md

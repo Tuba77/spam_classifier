@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Message Inspector</title>
+<style>
+  :root {
+    --bg: #0e1210;
+    --panel: #151a17;
+    --border: #26302a;
+    --text: #dce4de;
+    --muted: #7c8b81;
+    --mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+    --sans: 'IBM Plex Sans', -apple-system, sans-serif;
+
+    --safe: #6fcf97;
+    --caution: #e8b84b;
+    --danger: #e05d5d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 80px;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  header {
+    margin-bottom: 32px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+
+  p.sub {
+    color: var(--muted);
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    margin-top: 28px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 110px;
+    background: #0b0f0d;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 14px;
+    resize: vertical;
+    outline: none;
+  }
+
+  textarea:focus {
+    border-color: #3d4c42;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+  }
+
+  .endpoint {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .endpoint input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 220px;
+    padding: 2px 0;
+  }
+
+  .endpoint input:focus { outline: none; border-bottom-color: var(--muted); }
+
+  button {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  button:hover:not(:disabled) { opacity: 0.9; }
+
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .example-chip {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    background: #0b0f0d;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+
+  .example-chip:hover { border-color: #3d4c42; color: var(--text); }
+
+  .result {
+    margin-top: 24px;
+    display: none;
+  }
+
+  .result.show { display: block; }
+
+  .verdict {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 16px 20px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .verdict .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .verdict .label {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: lowercase;
+  }
+
+  .verdict .conf {
+    color: var(--muted);
+    font-size: 13px;
+    margin-left: auto;
+    font-family: var(--mono);
+  }
+
+  .bars {
+    margin-top: 14px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 52px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .bar-track {
+    height: 6px;
+    background: #0b0f0d;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--muted);
+    border-radius: 3px;
+  }
+
+  .bar-pct { text-align: right; color: var(--muted); }
+
+  .error-box {
+    margin-top: 24px;
+    padding: 14px 18px;
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    color: var(--danger);
+    font-family: var(--mono);
+    font-size: 13px;
+    display: none;
+  }
+
+  .error-box.show { display: block; }
+
+  footer {
+    margin-top: 40px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">sms classifier — local inference</p>
+    <h1>Message Inspector</h1>
+    <p class="sub">Paste a message to check whether it reads as ham, spam, a legit transaction alert, or smishing.</p>
+  </header>
+
+  <div class="panel">
+    <textarea id="msg" placeholder="e.g. URGENT! Your account will be suspended. Verify now at http://bit.ly/verify123"></textarea>
+
+    <div class="examples">
+      <span class="example-chip" data-text="Hey, are we still meeting for lunch tomorrow at 1pm?">lunch plans</span>
+      <span class="example-chip" data-text="Your OTP for transaction of Rs. 5000 is 483920. Valid for 10 mins.">OTP alert</span>
+      <span class="example-chip" data-text="WIN A FREE IPHONE NOW!!! Click here to claim your prize: www.freegift.xyz">prize spam</span>
+      <span class="example-chip" data-text="URGENT! Your account will be suspended. Verify now at http://bit.ly/verify123 or call 9876543210!!!">phishing link</span>
+    </div>
+
+    <div class="row">
+      <div class="endpoint">
+        POST <input id="endpoint" value="http://127.0.0.1:5000/predict" spellcheck="false">
+      </div>
+      <button id="submit">Inspect</button>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="verdict">
+      <span class="dot" id="verdict-dot"></span>
+      <span class="label" id="verdict-label">—</span>
+      <span class="conf" id="verdict-conf"></span>
+    </div>
+    <div class="bars" id="bars"></div>
+  </div>
+
+  <div class="error-box" id="error-box"></div>
+
+  <footer>expects a running Flask backend at /predict — see app.py</footer>
+</div>
+
+<script>
+  const CLASS_COLORS = {
+    ham: 'var(--safe)',
+    legit_transaction: 'var(--safe)',
+    spam: 'var(--caution)',
+    smishing: 'var(--danger)'
+  };
+
+  const msgEl = document.getElementById('msg');
+  const submitBtn = document.getElementById('submit');
+  const resultEl = document.getElementById('result');
+  const errorBox = document.getElementById('error-box');
+  const endpointEl = document.getElementById('endpoint');
+
+  document.querySelectorAll('.example-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      msgEl.value = chip.dataset.text;
+      msgEl.focus();
+    });
+  });
+
+  async function inspect() {
+    const text = msgEl.value.trim();
+    if (!text) return;
+
+    errorBox.classList.remove('show');
+    resultEl.classList.remove('show');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Inspecting…';
+
+    try {
+      const res = await fetch(endpointEl.value, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Server responded ${res.status}`);
+      }
+
+      const data = await res.json();
+      renderResult(data);
+    } catch (err) {
+      errorBox.textContent = `Couldn't reach the backend: ${err.message}. Is app.py running at ${endpointEl.value}?`;
+      errorBox.classList.add('show');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Inspect';
+    }
+  }
+
+  function renderResult(data) {
+    const { prediction, probabilities } = data;
+    const dot = document.getElementById('verdict-dot');
+    const label = document.getElementById('verdict-label');
+    const conf = document.getElementById('verdict-conf');
+    const bars = document.getElementById('bars');
+
+    const color = CLASS_COLORS[prediction] || 'var(--muted)';
+    dot.style.background = color;
+    label.textContent = prediction.replace('_', ' ');
+    label.style.color = color;
+    conf.textContent = `${(probabilities[prediction] * 100).toFixed(1)}% confidence`;
+
+    const sorted = Object.entries(probabilities).sort((a, b) => b[1] - a[1]);
+    bars.innerHTML = sorted.map(([cls, p]) => `
+      <div class="bar-row">
+        <span>${cls.replace('_', ' ')}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${(p*100).toFixed(1)}%; background:${CLASS_COLORS[cls] || 'var(--muted)'}"></div></div>
+        <span class="bar-pct">${(p*100).toFixed(1)}%</span>
+      </div>
+    `).join('');
+
+    resultEl.classList.add('show');
+  }
+
+  submitBtn.addEventListener('click', inspect);
+  msgEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) inspect();
+  });
+</script>
+</body>
+</html>
