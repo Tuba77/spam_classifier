@@ -5,3 +5,4 @@ spam_or_nonspam.csv
 venv/
 .ipynb_checkpoints/
 README.md
+.gitignore
